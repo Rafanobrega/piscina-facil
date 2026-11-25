@@ -15,6 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calcularPreco } from '../calculo';
 import { distanciaKm } from '../distancia';
+import { salvarOrcamento } from '../orcamentos';
 import { cores } from '../tema';
 
 // Campo com título e unidade opcional (km, R$/L, L)
@@ -97,7 +98,23 @@ export default function Calculadora({ navigation, route }) {
     }
 
     setErro('');
-    setResultado(calcularPreco(kmNum, gasolinaNum, volumeNum));
+        const preco = calcularPreco(kmNum, gasolinaNum, volumeNum);
+    setResultado(preco);
+
+    // Salva o orçamento no histórico (Supabase)
+    AsyncStorage.getItem('usuarioLogado')
+      .then((usuario) =>
+        salvarOrcamento({
+          usuario: usuario || 'anonimo',
+          cliente: cliente.trim(),
+          endereco: endereco.trim(),
+          km: kmNum,
+          gasolina: gasolinaNum,
+          volume: volumeNum,
+          valor: preco,
+        })
+      )
+      .catch(() => alert('Calculou, mas não foi possível salvar no histórico.'));
     Vibration.vibrate(300); // recurso do celular
     Keyboard.dismiss();
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
@@ -224,7 +241,12 @@ export default function Calculadora({ navigation, route }) {
           >
             <Text style={styles.textoContorno}>Ver histórico</Text>
           </Pressable>
-          <Pressable onPress={() => route.params.funcLogar(false)}>
+          <Pressable
+  onPress={async () => {
+    await AsyncStorage.removeItem('usuarioLogado');
+    route.params.funcLogar(false);
+  }}
+>
             <Text style={styles.sair}>Sair</Text>
           </Pressable>
         </View>

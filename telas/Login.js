@@ -40,6 +40,7 @@ export default function Login({ navigation, route }) {
 
       if (hash === salvo) {
         setErro('');
+        await AsyncStorage.setItem('usuarioLogado', usuario.trim());
         route.params.funcLogar(true);
       } else {
         setErro('Senha incorreta.');
